@@ -1,7 +1,7 @@
 const Web3 = require("web3");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
 const { db, createTable } = require("./db");
-const config = require("../config.json");
+const config = require("../data/config.json");
 
 const configindex = process.argv[2];
 

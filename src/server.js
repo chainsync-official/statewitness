@@ -3,7 +3,7 @@ const { db } = require("./db");
 const validator = require("validator");
 const Web3 = require("web3");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
-const configs = require("../config.json");
+const configs = require("../data/config.json");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
