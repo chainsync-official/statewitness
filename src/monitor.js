@@ -1,19 +1,18 @@
 const Web3 = require("web3");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
 const { db, createTable } = require("./db");
-const config = require("./config.json");
+const config = require("../config.json");
 
-const chainId = process.argv[2];
+const configindex = process.argv[2];
 
-if (!chainId || !config[chainId]) {
+if (!configindex || !config[configindex]) {
   console.error(
     "Invalid or missing chain_id. Please provide a valid chain_id as a command line argument."
   );
   process.exit(1);
 }
 
-const { PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config[chainId];
-const web3 = new Web3(new Web3.providers.HttpProvider(RPC_URL));
+const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config[configindex];
 const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
 
 const signStateRoot = async (stateRoot, privateKey) => {

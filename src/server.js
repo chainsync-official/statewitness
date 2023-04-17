@@ -1,6 +1,9 @@
 const express = require("express");
 const { db } = require("./db");
 const validator = require("validator");
+const Web3 = require("web3");
+const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
+const configs = require("../config.json");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,3 +45,49 @@ app.get("/api/latest-signature/:chain_id", async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+const signStateRoot = async (stateRoot, privateKey) => {
+  const messageHash = hashPersonalMessage(toBuffer(stateRoot));
+  const { v, r, s } = ecsign(messageHash, toBuffer(privateKey));
+  return toRpcSig(v, r, s);
+};
+
+const saveSignature = (chainId, blockNumber, stateRoot, eoaAddress, signature) => {
+  return new Promise((resolve, reject) => {
+    const query = `
+      INSERT INTO block_signatures (chain_id, block_number, state_root, address, signature)
+      VALUES (?, ?, ?, ?, ?);
+    `;
+
+    db.run(query, [chainId, blockNumber, stateRoot, eoaAddress, signature], (err) => {
+      if (err) {
+        console.error("Error saving signature:", err);
+        reject(err);
+      } else {
+        console.log(`Signature saved for block number ${blockNumber}`);
+        resolve();
+      }
+    });
+  });
+};
+
+const monitorStateRoot = async (config) => {
+  const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config;
+  const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
+  web3Ws.eth.subscribe("newBlockHeaders", async (err, blockHeader) => {
+    if (err) {
+      console.error("Error subscribing to new block headers:", err);
+      return;
+    }
+
+    const { number, stateRoot } = blockHeader;
+    const signature = await signStateRoot(stateRoot, PRIVATE_KEY);
+    await saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
+  });
+};
+
+for (const config of configs) {
+  (async () => {
+    monitorStateRoot(config);
+  })();
+}
