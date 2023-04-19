@@ -73,9 +73,8 @@ const saveSignature = (chainId, blockNumber, stateRoot, eoaAddress, signature) =
   });
 };
 
-const monitorStateRoot = async (config) => {
+const monitorStateRoot = async (web3Ws, config) => {
   const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config;
-  const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
   web3Ws.eth.subscribe("newBlockHeaders", async (err, blockHeader) => {
     if (err) {
       console.error("Error subscribing to new block headers:", err);
@@ -90,6 +89,14 @@ const monitorStateRoot = async (config) => {
 
 for (const config of configs) {
   (async () => {
-    monitorStateRoot(config);
+    const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config;
+    let web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
+    web3Ws.currentProvider.on("close", () => {
+      console.log("Websocket connection closed");
+      // 尝试重新连接websocket provider
+      web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
+      monitorStateRoot(web3Ws, config);
+    });
+    monitorStateRoot(web3Ws, config);
   })();
 }
