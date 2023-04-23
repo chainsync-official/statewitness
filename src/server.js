@@ -49,24 +49,24 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-const signStateRoot = async (chainId, number, stateRoot, privateKey) => {
+const signStateRoot = async (chainId, number, stateRoot, timestamp, privateKey) => {
   const dataToSign = abi.solidityPack(
-    ["uint256", "uint256", "bytes32"],
-    [chainId, number, stateRoot]
+    ["uint256", "uint256", "bytes32", "uint256"],
+    [chainId, number, stateRoot, timestamp]
   );
   const messageHash = hashPersonalMessage(toBuffer(dataToSign));
   const { v, r, s } = ecsign(messageHash, toBuffer(privateKey));
   return toRpcSig(v, r, s);
 };
 
-const saveSignature = (chainId, blockNumber, stateRoot, eoaAddress, signature) => {
+const saveSignature = (chainId, blockNumber, stateRoot, timestamp, eoaAddress, signature) => {
   return new Promise((resolve, reject) => {
     const query = `
-      INSERT INTO block_signatures (chain_id, block_number, state_root, address, signature)
-      VALUES (?, ?, ?, ?, ?);
+      INSERT INTO block_signatures (chain_id, block_number, state_root, timestamp, address, signature)
+      VALUES (?, ?, ?, ?, ?, ?);
     `;
 
-    db.run(query, [chainId, blockNumber, stateRoot, eoaAddress, signature], (err) => {
+    db.run(query, [chainId, blockNumber, stateRoot, timestamp, eoaAddress, signature], (err) => {
       if (err) {
         console.error("Error saving signature:", err);
         reject(err);
@@ -86,8 +86,8 @@ const monitorStateRoot = async (web3Ws, config) => {
       return;
     }
 
-    const { number, stateRoot } = blockHeader;
-    const signature = await signStateRoot(chainId, number, stateRoot, PRIVATE_KEY);
+    const { number, stateRoot, timestamp } = blockHeader;
+    const signature = await signStateRoot(chainId, number, stateRoot, timestamp, PRIVATE_KEY);
     await saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
   });
 };

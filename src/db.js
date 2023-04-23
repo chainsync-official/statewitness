@@ -14,6 +14,7 @@ const createTable = () => {
     chain_id INTEGER,
     block_number INTEGER,
     state_root TEXT,
+    timestamp INTEGER,
     address TEXT,
     signature TEXT,
     UNIQUE (chain_id, block_number)
