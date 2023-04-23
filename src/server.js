@@ -2,6 +2,7 @@ const express = require("express");
 const { db, createTable } = require("./db");
 const validator = require("validator");
 const Web3 = require("web3");
+const abi = require("ethereumjs-abi");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
 const configs = require("../data/config.json");
 
@@ -48,8 +49,12 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-const signStateRoot = async (stateRoot, privateKey) => {
-  const messageHash = hashPersonalMessage(toBuffer(stateRoot));
+const signStateRoot = async (chainId, number, stateRoot, privateKey) => {
+  const dataToSign = abi.solidityPack(
+    ["uint256", "uint256", "bytes32"],
+    [chainId, number, stateRoot]
+  );
+  const messageHash = hashPersonalMessage(toBuffer(dataToSign));
   const { v, r, s } = ecsign(messageHash, toBuffer(privateKey));
   return toRpcSig(v, r, s);
 };
@@ -82,7 +87,7 @@ const monitorStateRoot = async (web3Ws, config) => {
     }
 
     const { number, stateRoot } = blockHeader;
-    const signature = await signStateRoot(stateRoot, PRIVATE_KEY);
+    const signature = await signStateRoot(chainId, number, stateRoot, PRIVATE_KEY);
     await saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
   });
 };

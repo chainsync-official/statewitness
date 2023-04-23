@@ -1,5 +1,6 @@
 {
 	"dependencies": {
+		"ethereumjs-abi": "^0.6.8",
 		"ethereumjs-util": "^7.1.5",
 		"express": "^4.18.2",
 		"noble-bls12-381": "^0.15.0",
