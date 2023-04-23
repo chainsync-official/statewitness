@@ -50,10 +50,13 @@ app.listen(PORT, () => {
 });
 
 const signStateRoot = async (chainId, number, stateRoot, timestamp, privateKey) => {
-  const dataToSign = abi.solidityPack(
-    ["uint256", "uint256", "bytes32", "uint256"],
-    [chainId, number, stateRoot, timestamp]
+  const dataToSign = abi.soliditySHA3(
+    abi.solidityPack(
+      ["uint256", "uint256", "bytes32", "uint256"],
+      [chainId, number, stateRoot, timestamp]
+    )
   );
+
   const messageHash = hashPersonalMessage(toBuffer(dataToSign));
   const { v, r, s } = ecsign(messageHash, toBuffer(privateKey));
   return toRpcSig(v, r, s);
