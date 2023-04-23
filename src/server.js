@@ -88,7 +88,7 @@ const monitorStateRoot = async (web3Ws, config) => {
 
     const { number, stateRoot, timestamp } = blockHeader;
     const signature = await signStateRoot(chainId, number, stateRoot, timestamp, PRIVATE_KEY);
-    await saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
+    await saveSignature(chainId, number, stateRoot, timestamp, EOA_ADDRESS, signature);
   });
 };
 
