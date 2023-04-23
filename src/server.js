@@ -49,8 +49,8 @@ app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-const signStateRoot = async (chainId, number, stateRoot, timestamp, privateKey) => {
-  const dataToSign = abi.soliditySHA3(
+const signStateRoot = async (web3Ws, chainId, number, stateRoot, timestamp, privateKey) => {
+  const dataToSign = web3Ws.utils.keccak256(
     abi.solidityPack(
       ["uint256", "uint256", "bytes32", "uint256"],
       [chainId, number, stateRoot, timestamp]
@@ -90,7 +90,14 @@ const monitorStateRoot = async (web3Ws, config) => {
     }
 
     const { number, stateRoot, timestamp } = blockHeader;
-    const signature = await signStateRoot(chainId, number, stateRoot, timestamp, PRIVATE_KEY);
+    const signature = await signStateRoot(
+      web3Ws,
+      chainId,
+      number,
+      stateRoot,
+      timestamp,
+      PRIVATE_KEY
+    );
     await saveSignature(chainId, number, stateRoot, timestamp, EOA_ADDRESS, signature);
   });
 };
