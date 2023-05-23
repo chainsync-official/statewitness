@@ -2,6 +2,9 @@ const Web3 = require("web3");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
 const { db, createTable } = require("./db");
 const config = require("../data/config.json");
+const { Provider } = require("zksync-web3");
+
+const provider = new Provider("https://testnet.era.zksync.dev");
 
 const configindex = process.argv[2];
 
@@ -14,6 +17,7 @@ if (!configindex || !config[configindex]) {
 
 const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config[configindex];
 const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WS_RPC_URL));
+const web3 = new Web3(new Web3.providers.HttpProvider(RPC_URL));
 
 const signStateRoot = async (stateRoot, privateKey) => {
   const messageHash = hashPersonalMessage(toBuffer(stateRoot));
@@ -41,16 +45,22 @@ const saveSignature = (chainId, blockNumber, stateRoot, eoaAddress, signature) =
 };
 
 const monitorStateRoot = async () => {
-  web3Ws.eth.subscribe("newBlockHeaders", async (err, blockHeader) => {
-    if (err) {
-      console.error("Error subscribing to new block headers:", err);
-      return;
-    }
+  const subscribe = web3Ws.eth
+    .subscribe("newBlockHeaders")
+    .on("connected", function (subscriptionId) {
+      console.log("subscriptionId", subscriptionId);
+    })
+    .on("data", function (blockHeader) {
+      console.log("blockHeader", blockHeader);
 
-    const { number, stateRoot } = blockHeader;
-    const signature = await signStateRoot(stateRoot, PRIVATE_KEY);
-    await saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
-  });
+      const { number, stateRoot } = blockHeader;
+      signStateRoot(stateRoot, PRIVATE_KEY).then((signature) => {
+        saveSignature(chainId, number, stateRoot, EOA_ADDRESS, signature);
+      });
+    })
+    .on("error", console.error);
+
+  subscribe.unsubscribe(function (error, success) {});
 };
 
 (async () => {
