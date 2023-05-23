@@ -90,8 +90,6 @@ const monitorStateRoot = async (web3Ws, config) => {
       console.log("subscriptionId", subscriptionId);
     })
     .on("data", function (blockHeader) {
-      console.log("blockHeader", blockHeader);
-
       const { number, stateRoot, timestamp } = blockHeader;
       signStateRoot(web3Ws, chainId, number, stateRoot, timestamp, PRIVATE_KEY).then(
         (signature) => {
