@@ -83,23 +83,23 @@ const saveSignature = (chainId, blockNumber, stateRoot, timestamp, eoaAddress, s
 
 const monitorStateRoot = async (web3Ws, config) => {
   const { chainId, PRIVATE_KEY, EOA_ADDRESS, RPC_URL, WS_RPC_URL } = config;
-  web3Ws.eth.subscribe("newBlockHeaders", async (err, blockHeader) => {
-    if (err) {
-      console.error("Error subscribing to new block headers:", err);
-      return;
-    }
 
-    const { number, stateRoot, timestamp } = blockHeader;
-    const signature = await signStateRoot(
-      web3Ws,
-      chainId,
-      number,
-      stateRoot,
-      timestamp,
-      PRIVATE_KEY
-    );
-    await saveSignature(chainId, number, stateRoot, timestamp, EOA_ADDRESS, signature);
-  });
+  web3Ws.eth
+    .subscribe("newBlockHeaders")
+    .on("connected", function (subscriptionId) {
+      console.log("subscriptionId", subscriptionId);
+    })
+    .on("data", function (blockHeader) {
+      console.log("blockHeader", blockHeader);
+
+      const { number, stateRoot, timestamp } = blockHeader;
+      signStateRoot(web3Ws, chainId, number, stateRoot, timestamp, PRIVATE_KEY).then(
+        (signature) => {
+          saveSignature(chainId, number, stateRoot, timestamp, EOA_ADDRESS, signature);
+        }
+      );
+    })
+    .on("error", console.error);
 };
 
 for (const config of configs) {

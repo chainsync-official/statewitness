@@ -59,8 +59,6 @@ const monitorStateRoot = async () => {
       });
     })
     .on("error", console.error);
-
-  subscribe.unsubscribe(function (error, success) {});
 };
 
 (async () => {
