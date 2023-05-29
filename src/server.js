@@ -4,6 +4,7 @@ const validator = require("validator");
 const Web3 = require("web3");
 const abi = require("ethereumjs-abi");
 const { ecsign, toRpcSig, hashPersonalMessage, toBuffer } = require("ethereumjs-util");
+const cors = require("cors");
 const configs = require("../data/config.json");
 
 createTable();
@@ -11,6 +12,7 @@ createTable();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/api/latest-signature/:chain_id", async (req, res) => {
