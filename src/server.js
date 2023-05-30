@@ -28,7 +28,7 @@ app.get("/api/latest-signature/:chain_id", async (req, res) => {
     SELECT * FROM block_signatures
     WHERE chain_id = ?
     ORDER BY block_number DESC
-    LIMIT 1;
+    LIMIT 2,1;
     `;
 
     db.get(query, [chain_id], (err, row) => {
